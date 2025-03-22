@@ -147,70 +147,80 @@
 2. 打开 `/etc/nginx/nginx.conf`，修改相关设置
 
    ```nginx
-   user www-data;
-   worker_processes auto;
-   pid /run/nginx.pid;
-   include /etc/nginx/modules-enabled/*.conf;
-   
-   events {
-   	  worker_connections 768;
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+
+events {
+      worker_connections 768;
+}
+
+http {
+   sendfile on;
+   tcp_nopush on;
+   tcp_nodelay on;
+   keepalive_timeout 65;
+   types_hash_max_size 20480;
+
+   include /etc/nginx/mime.types;
+   default_type application/octet-stream;
+
+   ssl_protocols TLSv1 TLSv1.1 TLSv1.2; # Dropping SSLv3, ref: POODLE
+   ssl_prefer_server_ciphers on;
+
+   access_log /var/log/nginx/access.log;
+   error_log /var/log/nginx/error.log;
+
+   gzip on;
+
+   map $http_connection $connection_upgrade {
+     "~*Upgrade" $http_connection;
+     default keep-alive;
    }
-   
-   http {
-      sendfile on;
-      tcp_nopush on;
-      tcp_nodelay on;
-      keepalive_timeout 65;
-      types_hash_max_size 20480;
-   
-      include /etc/nginx/mime.types;
-      default_type application/octet-stream;
-   
-      ssl_protocols TLSv1 TLSv1.1 TLSv1.2; # Dropping SSLv3, ref: POODLE
-      ssl_prefer_server_ciphers on;
-   
-      access_log /var/log/nginx/access.log;
-      error_log /var/log/nginx/error.log;
-   
-      gzip on;
-   
-      map $http_connection $connection_upgrade {
-        "~*Upgrade" $http_connection;
-        default keep-alive;
-      }
-   
-      # ========================== 重点看这里========================
-      server {
-          listen 80;
-          server_name xxx.xxx.xxx.xxx;				                    # 云服务器公网ip (或域名)     
-   
-          location / {
-              client_max_body_size 100m;                          		# html报文尺寸限制
-              
-              proxy_pass http://127.0.0.1:12121;
-   
-              # Configuration for WebSockets
-              proxy_set_header Upgrade $http_upgrade;
-                    proxy_set_header Connection $connection_upgrade;
-                    proxy_cache off;
-               # WebSockets were implemented after http/1.0
-              proxy_http_version 1.1;
-   
-              # Configuration for ServerSentEvents
-              proxy_buffering off;
-   
-              # Configuration for LongPolling or if your KeepAliveInterval is longer than 60 seconds
-              proxy_read_timeout 100s;
-   
-              proxy_set_header Host $host;
-              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-              proxy_set_header X-Forwarded-Proto $scheme;
-          }
-      }
-   
-   	  include /etc/nginx/conf.d/*.conf;
-   	  include /etc/nginx/sites-enabled/*;
+
+   server {
+       listen 443 ssl;
+
+       ssl_certificate /etc/nginx/conf.d/fullchain.pem; # 这是证书
+       ssl_certificate_key /etc/nginx/conf.d/privkey.pem; # 这是私钥
+       ssl_protocols TLSv1.2 TLSv1.3;
+       ssl_prefer_server_ciphers on;
+       ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+       ssl_session_timeout 1d;
+       ssl_session_cache shared:SSL:10m;
+       ssl_session_tickets off;
+       ssl_stapling on;
+       ssl_stapling_verify on;
+
+       server_name imagebed.20250310.xyz; # 域名，不要加https 
+
+       location / {
+           client_max_body_size 100m; 
+           
+           proxy_pass http://127.0.0.1:12121;
+
+           # Configuration for WebSockets
+           proxy_set_header Upgrade $http_upgrade;
+           proxy_set_header Connection $connection_upgrade;
+           proxy_cache off;
+           # WebSockets were implemented after http/1.0
+           proxy_http_version 1.1;
+
+           # Configuration for ServerSentEvents
+           proxy_buffering off;
+
+           # Configuration for LongPolling or if your KeepAliveInterval is longer than 60 seconds
+           proxy_read_timeout 100s;
+
+           proxy_set_header Host $host;
+           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+           proxy_set_header X-Forwarded-Proto $scheme;
+       }
    }
+
+      include /etc/nginx/conf.d/*.conf;
+}
+
    ```
 
 3. 检查 `nginx.conf` 语法是否正确
