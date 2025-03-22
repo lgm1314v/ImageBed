@@ -146,7 +146,7 @@
 
 2. 打开 `/etc/nginx/nginx.conf`，修改相关设置
 
-   ```nginx
+```shell
 user www-data;
 worker_processes auto;
 pid /run/nginx.pid;
@@ -220,7 +220,7 @@ http {
 
       include /etc/nginx/conf.d/*.conf;
 }
- ```
+```
 
 3. 检查 `nginx.conf` 语法是否正确
 
