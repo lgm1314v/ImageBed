@@ -220,8 +220,7 @@ http {
 
       include /etc/nginx/conf.d/*.conf;
 }
-
-   ```
+ ```
 
 3. 检查 `nginx.conf` 语法是否正确
 
