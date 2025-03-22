@@ -117,7 +117,7 @@ sudo apt-get update && \
   sudo apt-get install -y aspnetcore-runtime-6.0
 
 sudo apt-get install -y dotnet-runtime-6.0
-   ```
+```
 
 > 版本: Ubuntu 18.04.4 LTS（GNU/Linux 4.15.0-159-generic x86_64）
 
